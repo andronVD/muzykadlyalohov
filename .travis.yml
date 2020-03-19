@@ -1,0 +1,11 @@
+language: java
+branches:
+  only:
+  - master
+  - /^feature-.*$/
+  - /^bugfix-.*$/
+deploy:
+  provider: heroku
+  api_key:
+    secure: "082ca9b9-851d-4291-9e1b-ec35f7426b93"
+  app: tbfm
