@@ -1,22 +1,15 @@
 package com.tgbot.muzykadlyalohov;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InvalidObjectException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.List;
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
 
-import javax.activation.MimeType;
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.io.FileUtils;
@@ -27,7 +20,6 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendAudio;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.objects.Audio;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -35,8 +27,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import com.github.kiulian.downloader.YoutubeDownloader;
 import com.github.kiulian.downloader.YoutubeException;
 import com.github.kiulian.downloader.model.YoutubeVideo;
-import com.github.kiulian.downloader.model.formats.AudioFormat;
-import com.github.kiulian.downloader.model.formats.AudioVideoFormat;
 import com.github.kiulian.downloader.model.quality.AudioQuality;
 
 @Component
@@ -45,26 +35,12 @@ public class MuzloxBot extends TelegramLongPollingBot {
 	private static final Logger logger = LoggerFactory.getLogger(MuzloxBot.class);
 	private static final Pattern p = Pattern.compile("^vi/|v=|/v/|youtu.be/|embed/$");
 	
-	public enum MusicSource {
-		YOUTUBE("youtu"),
-		SPOTIFY("spotify"),
-		SOUNDCLOUD("soundcloud"),
-		APPLE_MUSIC("music.apple");
-		
-		private String displayUrl;
-		
-		MusicSource(String displayUrl) {
-			this.displayUrl = displayUrl; 
-		}
-		
-		
-	}
-	
 	@Value("${bot.token}")
 	private String token;
 	
 	@Value("${bot.username}")
 	private String username;
+	
 	@Override
 	public String getBotUsername() {
 		return username;
@@ -80,52 +56,45 @@ public class MuzloxBot extends TelegramLongPollingBot {
         try {
             Message message = update.getChannelPost();
             if (message != null && message.hasText()) {
-                try {
-                    handleIncomingMessage(message);
-                } catch (InvalidObjectException e) {
-                    logger.debug("InvalidObjectException: " + e.getMessage());
-                }
+            	createResponseMessage(message);
             } else {
             	message = update.getMessage();
             	if (message != null && message.hasText()) {
-                    try {
-                        handleIncomingMessage(message);
-                    } catch (InvalidObjectException e) {
-                        logger.debug("InvalidObjectException: " + e.getMessage());
-                    }
+            		createResponseMessage(message);
                 }
             }
         } catch (Exception e) {
-            logger.debug("Something went wrong: " + e.getMessage());
+            logger.info("Something went wrong: " + e.getMessage());
         }
 	}
 	
-	private void handleIncomingMessage(Message message) throws InvalidObjectException {
+	private void createResponseMessage(Message message) {
 		if (message.getText().contains("youtu")) {
-			executeYoutubeResponse(message);
+			logger.info("!!!Start procession youtube link - " + message.getText());
+			processYoutube(message);
+			logger.info("!!!End procession youtube link - " + message.getText());
 		} if (message.getText().contains("коваль")) {
-			executeResponse(message);
+			sendMessage(message);
 		}
 	}
 	
-	private void executeYoutubeResponse(Message message) {
+	private void processYoutube(Message message) {
 		String videoId = message.getText().split(p.pattern())[1];
-		YoutubeVideo video = getVideo(videoId);
+		YoutubeVideo video = getYoutubeVideo(videoId);
 		if (video != null) {
 			SendAudio res = new SendAudio();
 			res.setChatId(message.getChatId());
 			try {
 				String audioUrl = video.audioFormats().stream().filter(a -> AudioQuality.low == a.audioQuality()).collect(Collectors.toList()).get(0).url();
-				URL source = new URL(audioUrl);
-				String path = System.getProperty("java.io.tmpdir") + video.details().title() + ".mp3"; 
+				String path = "/" + video.details().title() + ".mp3";
 				File faudio = new File(path);
 				faudio.deleteOnExit();
-				FileUtils.copyURLToFile(source, faudio);
+				FileUtils.copyURLToFile(new URL(audioUrl), faudio);
 				//File result = compressAudioFile(faudio);
 				res.setAudio(faudio);
 				execute(res);
 			} catch (TelegramApiException | IOException e) {
-				e.printStackTrace();
+				logger.info(e.getLocalizedMessage());
 			}
 		}
 	}
@@ -143,12 +112,12 @@ public class MuzloxBot extends TelegramLongPollingBot {
 	        }
 	        //return new File
 		} catch (IOException e) {
-			e.printStackTrace();
+			logger.info(e.getLocalizedMessage());
 		}
 		return null;
 	}
 
-	private YoutubeVideo getVideo(String videoId) {
+	private YoutubeVideo getYoutubeVideo(String videoId) {
 		YoutubeDownloader downloader = new YoutubeDownloader();
 
 		downloader.addCipherFunctionPattern(2, "\\b([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)");
@@ -160,13 +129,13 @@ public class MuzloxBot extends TelegramLongPollingBot {
 		try {
 			video = downloader.getVideo(videoId);
 		} catch (YoutubeException | IOException e) {
-			e.printStackTrace();
+			logger.info(e.getLocalizedMessage());
 		}
 
 		return video;
 	}
 
-	private void executeResponse(Message message) {
+	private void sendMessage(Message message) {
 		SendMessage response = new SendMessage();
 		Long chatId = message.getChatId();
 		response.setChatId(chatId);
@@ -174,7 +143,7 @@ public class MuzloxBot extends TelegramLongPollingBot {
 		try {
 			execute(response);
 		} catch (TelegramApiException e) {
-            logger.debug("Response execution failed: " + e.getMessage());
+            logger.info("Response execution failed: " + e.getMessage());
     	}
 	}
 
