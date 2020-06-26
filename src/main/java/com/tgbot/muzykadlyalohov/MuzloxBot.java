@@ -96,7 +96,7 @@ public class MuzloxBot extends TelegramLongPollingBot {
 						.findFirst()
 						.map(AudioFormat::url)
 						.orElse(null);
-				String path = "/" + video.details().title() + ".mp3";
+				String path = System.getProperty("user.dir") + "/" + video.details().title() + ".mp3";
 				File faudio = new File(path);
 				faudio.deleteOnExit();
 				FileUtils.copyURLToFile(new URL(audioUrl), faudio);
