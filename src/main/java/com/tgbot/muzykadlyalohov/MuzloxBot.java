@@ -70,16 +70,22 @@ public class MuzloxBot extends TelegramLongPollingBot {
 	
 	private void createResponseMessage(Message message) {
 		if (message.getText().contains("youtu")) {
-			logger.info("!!!Start procession youtube link - " + message.getText());
+			logger.info("!!!Start processing youtube link - " + message.getText());
 			processYoutube(message);
-			logger.info("!!!End procession youtube link - " + message.getText());
+			logger.info("!!!End processing youtube link - " + message.getText());
 		} if (message.getText().contains("коваль")) {
+			sendMessage(message);
+		} if (message.getText().contains("12345")) {
 			sendMessage(message);
 		}
 	}
 	
 	private void processYoutube(Message message) {
 		String videoId = message.getText().split(p.pattern())[1];
+		int ampersandIndex = videoId.indexOf('&');
+		if (ampersandIndex != -1) {
+			videoId = videoId.substring(0, ampersandIndex);
+		}
 		YoutubeVideo video = getYoutubeVideo(videoId);
 		if (video != null) {
 			SendAudio res = new SendAudio();
