@@ -40,6 +40,9 @@ public class MuzloxBot extends TelegramLongPollingBot {
 	
 	@Value("${bot.username}")
 	private String username;
+
+	@Value("${app.version}")
+	private String appVersion;
 	
 	@Override
 	public String getBotUsername() {
@@ -74,18 +77,14 @@ public class MuzloxBot extends TelegramLongPollingBot {
 			processYoutube(message);
 			logger.info("!!!End processing youtube link - " + message.getText());
 		} if (message.getText().contains("коваль")) {
-			sendMessage(message);
-		} if (message.getText().contains("12345")) {
-			sendMessage(message);
+			sendTextMessage(message, "Я люблю тебя, коваль! ты мой шедевр!");
+		} if (message.getText().contains("/version")) {
+			sendTextMessage(message, appVersion);
 		}
 	}
 	
 	private void processYoutube(Message message) {
-		String videoId = message.getText().split(p.pattern())[1];
-		int ampersandIndex = videoId.indexOf('&');
-		if (ampersandIndex != -1) {
-			videoId = videoId.substring(0, ampersandIndex);
-		}
+		String videoId = getYoutubeVideoId(message.getText());
 		YoutubeVideo video = getYoutubeVideo(videoId);
 		if (video != null) {
 			SendAudio res = new SendAudio();
@@ -103,6 +102,15 @@ public class MuzloxBot extends TelegramLongPollingBot {
 				logger.info(e.getLocalizedMessage());
 			}
 		}
+	}
+
+	private String getYoutubeVideoId(String messageText) {
+		String videoId = messageText.split(p.pattern())[1];
+		int ampersandIndex = videoId.indexOf('&');
+		if (ampersandIndex != -1) {
+			videoId = videoId.substring(0, ampersandIndex);
+		}
+		return videoId;
 	}
 
 	private File compressAudioFile(File faudio) {
@@ -124,6 +132,7 @@ public class MuzloxBot extends TelegramLongPollingBot {
 	}
 
 	private YoutubeVideo getYoutubeVideo(String videoId) {
+		logger.info("Video id - " + videoId);
 		YoutubeDownloader downloader = new YoutubeDownloader();
 
 		downloader.addCipherFunctionPattern(2, "\\b([a-zA-Z0-9$]{2})\\s*=\\s*function\\(\\s*a\\s*\\)\\s*\\{\\s*a\\s*=\\s*a\\.split\\(\\s*\"\"\\s*\\)");
@@ -141,11 +150,11 @@ public class MuzloxBot extends TelegramLongPollingBot {
 		return video;
 	}
 
-	private void sendMessage(Message message) {
+	private void sendTextMessage(Message message, String text) {
 		SendMessage response = new SendMessage();
 		Long chatId = message.getChatId();
 		response.setChatId(chatId);
-		response.setText("Я люблю тебя, коваль! ты мой шедевр!");
+		response.setText(text);
 		try {
 			execute(response);
 		} catch (TelegramApiException e) {
