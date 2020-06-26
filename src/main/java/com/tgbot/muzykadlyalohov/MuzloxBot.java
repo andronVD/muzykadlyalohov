@@ -12,6 +12,7 @@ import java.util.zip.DeflaterOutputStream;
 
 import javax.annotation.PostConstruct;
 
+import com.github.kiulian.downloader.model.formats.AudioFormat;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +91,11 @@ public class MuzloxBot extends TelegramLongPollingBot {
 			SendAudio res = new SendAudio();
 			res.setChatId(message.getChatId());
 			try {
-				String audioUrl = video.audioFormats().stream().filter(a -> AudioQuality.low == a.audioQuality()).collect(Collectors.toList()).get(0).url();
+				String audioUrl = video.audioFormats().stream()
+						.filter(a -> AudioQuality.low == a.audioQuality())
+						.findFirst()
+						.map(AudioFormat::url)
+						.orElse(null);
 				String path = "/" + video.details().title() + ".mp3";
 				File faudio = new File(path);
 				faudio.deleteOnExit();
@@ -99,7 +104,7 @@ public class MuzloxBot extends TelegramLongPollingBot {
 				res.setAudio(faudio);
 				execute(res);
 			} catch (TelegramApiException | IOException e) {
-				logger.info(e.getLocalizedMessage());
+				logger.info("Something went wrong: ", e);
 			}
 		}
 	}
