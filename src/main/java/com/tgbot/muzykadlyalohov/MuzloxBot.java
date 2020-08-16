@@ -1,11 +1,9 @@
 package com.tgbot.muzykadlyalohov;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.net.URL;
+import java.io.*;
+import java.net.*;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.DeflaterOutputStream;
@@ -13,7 +11,9 @@ import java.util.zip.DeflaterOutputStream;
 import javax.annotation.PostConstruct;
 
 import com.github.kiulian.downloader.model.formats.AudioFormat;
+import com.google.common.io.Files;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -96,14 +96,14 @@ public class MuzloxBot extends TelegramLongPollingBot {
 						.findFirst()
 						.map(AudioFormat::url)
 						.orElse(null);
+				URLConnection urlConnection = new URL(audioUrl).openConnection();
 				String path = System.getProperty("user.dir") + "/" + video.details().title() + ".mp3";
 				File faudio = new File(path);
 				faudio.deleteOnExit();
 				FileUtils.copyURLToFile(new URL(audioUrl), faudio);
-				//File result = compressAudioFile(faudio);
 				res.setAudio(faudio);
 				execute(res);
-			} catch (TelegramApiException | IOException e) {
+			} catch (Exception e) {
 				logger.info("Something went wrong: ", e);
 			}
 		}

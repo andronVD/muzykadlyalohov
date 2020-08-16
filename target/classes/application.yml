@@ -1,3 +1,6 @@
 bot:
   token: 1032248821:AAH4vI5tjNhF8mNKNAmqGAqzAbyV2u82e7I
   username: muzloxbot
+
+app:
+  version: 0.0.1-SNAPSHOT

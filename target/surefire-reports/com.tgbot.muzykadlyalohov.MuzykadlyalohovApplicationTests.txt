@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.tgbot.muzykadlyalohov.MuzykadlyalohovApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.889 s - in com.tgbot.muzykadlyalohov.MuzykadlyalohovApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.416 s - in com.tgbot.muzykadlyalohov.MuzykadlyalohovApplicationTests
